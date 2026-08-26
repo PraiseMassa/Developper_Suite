@@ -1,0 +1,52 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Project {
+  id          String         @id @default(uuid())
+  name        String
+  description String?
+  progress    Int            @default(0)
+  status      String         @default("ACTIVE") // ACTIVE, COMPLETED, ARCHIVED
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  tasks       Task[]
+  journals    JournalEntry[]
+}
+
+model Task {
+  id          String         @id @default(uuid())
+  title       String
+  description String?
+  status      String         @default("IDEAS") // IDEAS, TODO, IN_PROGRESS, DONE
+  priority    String         @default("MEDIUM") // LOW, MEDIUM, HIGH
+  dueDate     DateTime?
+  projectId   String?
+  project     Project?       @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  journals    JournalEntry[]
+}
+
+model JournalEntry {
+  id        String   @id @default(uuid())
+  title     String
+  content   String   // Markdown content
+  tags      String   @default("learning")
+  mood      String   @default("Nailed it") // Struggled, Okay, Nailed it
+  problem   String?  // "What went wrong?"
+  solution  String?  // "How did you solve it?"
+  lesson    String?  // "What would you do differently?"
+  isPublic  Boolean  @default(false)
+  taskId    String?
+  task      Task?    @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
