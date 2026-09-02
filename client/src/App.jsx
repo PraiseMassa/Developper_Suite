@@ -18,11 +18,6 @@ import {
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-// Example fetch request
-fetch(`${API_URL}/api/your-endpoint`)
-  .then(res => res.json())
-  .then(data => console.log(data));
-
 export default function App() {
   const [activeTab, setActiveTab] = useState('board');
   const [stats, setStats] = useState({ activeProjects: 0, tasksDue: 0, completedTasks: 0, journalCount: 0 });
@@ -75,7 +70,7 @@ export default function App() {
 
   const fetchStats = async () => {
     try {
-      const res = await fetch('${API_BASE_URL}/api/dashboard/stats');
+      const res = await fetch(`${API_URL}/api/dashboard/stats`);
       if (!res.ok) return;
       const data = await res.json();
       if (data.stats) setStats(data.stats);
@@ -86,7 +81,7 @@ export default function App() {
 
   const fetchTasks = async () => {
     try {
-      const res = await fetch('${API_BASE_URL}/api/tasks');
+      const res = await fetch(`${API_URL}/api/tasks`);
       if (!res.ok) return setTasks([]);
       const data = await res.json();
       setTasks(Array.isArray(data) ? data : []);
@@ -98,7 +93,7 @@ export default function App() {
 
   const fetchJournals = async () => {
     try {
-      const res = await fetch('${API_BASE_URL}/api/journals');
+      const res = await fetch(`${API_URL}/api/journals`);
       if (!res.ok) return setJournals([]);
       const data = await res.json();
       setJournals(Array.isArray(data) ? data : []);
@@ -110,7 +105,7 @@ export default function App() {
 
   const fetchProjects = async () => {
     try {
-      const res = await fetch('${API_BASE_URL}/api/projects');
+      const res = await fetch(`${API_URL}/api/projects`);
       if (!res.ok) return setProjects([]);
       const data = await res.json();
       setProjects(Array.isArray(data) ? data : []);
@@ -125,23 +120,19 @@ export default function App() {
     if (e) e.preventDefault();
     setFormError('');
     if (!newTask.title.trim()) return;
-
     const payload = { ...newTask };
     if (!payload.projectId) delete payload.projectId;
-
     try {
-      const res = await fetch('${API_BASE_URL}/api/tasks', {
+      const res = await fetch(`${API_URL}/api/tasks`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-
       if (res.ok) {
         setNewTask({ title: '', description: '', priority: 'MEDIUM', status: 'IDEAS', projectId: '' });
         setIsTaskModalOpen(false);
         await Promise.all([fetchTasks(), fetchStats()]);
       } else {
-        const errText = await res.text();
         setFormError(`Server Error (${res.status}): Task creation failed.`);
       }
     } catch (err) {
@@ -152,16 +143,13 @@ export default function App() {
   const handleUpdateTask = async (e) => {
     e.preventDefault();
     if (!editingTask || !editingTask.title.trim()) return;
-
     const taskId = editingTask.id || editingTask._id;
-
     try {
-      const res = await fetch(`${API_BASE_URL}/api/tasks/${taskId}`, {
+      const res = await fetch(`${API_URL}/api/tasks/${taskId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editingTask)
       });
-
       if (res.ok) {
         setEditingTask(null);
         await Promise.all([fetchTasks(), fetchStats()]);
@@ -173,9 +161,8 @@ export default function App() {
 
   const handleDeleteTask = async (taskId) => {
     if (!window.confirm('Are you sure you want to delete this task?')) return;
-
     try {
-      const res = await fetch(`${API_BASE_URL}/api/tasks/${taskId}`, { method: 'DELETE' });
+      const res = await fetch(`${API_URL}/api/tasks/${taskId}`, { method: 'DELETE' });
       if (res.ok) {
         setEditingTask(null);
         await Promise.all([fetchTasks(), fetchStats()]);
@@ -187,66 +174,60 @@ export default function App() {
 
   // Journal Handlers
   const handleCreateJournal = async (e) => {
-  if (e) e.preventDefault();
-  setFormError('');
-  if (!newJournal.title.trim() || !newJournal.content.trim()) return;
-
-  // Clean payload: remove empty strings so backend receives null/undefined for optional relations
-  const payload = {
-    title: newJournal.title.trim(),
-    content: newJournal.content.trim(),
-    tags: newJournal.tags || '',
-    mood: newJournal.mood || 'Nailed it',
-    problem: newJournal.problem.trim() || null,
-    solution: newJournal.solution.trim() || null,
-    lesson: newJournal.lesson.trim() || null,
-    projectId: newJournal.projectId ? newJournal.projectId : null,
-    taskId: newJournal.taskId ? newJournal.taskId : null,
-  };
-
-  try {
-    const res = await fetch(`${API_BASE_URL}/api/journals`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-
-    if (res.ok) {
-      setNewJournal({
-        title: '',
-        content: '',
-        tags: 'bugfix, learnings',
-        mood: 'Nailed it',
-        problem: '',
-        solution: '',
-        lesson: '',
-        projectId: '',
-        taskId: ''
+    if (e) e.preventDefault();
+    setFormError('');
+    if (!newJournal.title.trim() || !newJournal.content.trim()) return;
+    const payload = {
+      title: newJournal.title.trim(),
+      content: newJournal.content.trim(),
+      tags: newJournal.tags || '',
+      mood: newJournal.mood || 'Nailed it',
+      problem: newJournal.problem.trim() || null,
+      solution: newJournal.solution.trim() || null,
+      lesson: newJournal.lesson.trim() || null,
+      projectId: newJournal.projectId ? newJournal.projectId : null,
+      taskId: newJournal.taskId ? newJournal.taskId : null,
+    };
+    try {
+      const res = await fetch(`${API_URL}/api/journals`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
       });
-      setIsJournalModalOpen(false);
-      await Promise.all([fetchJournals(), fetchStats()]);
-    } else {
-      const errorData = await res.json().catch(() => ({}));
-      setFormError(errorData.message || `Server Error (${res.status}): Journal creation failed.`);
+      if (res.ok) {
+        setNewJournal({
+          title: '',
+          content: '',
+          tags: 'bugfix, learnings',
+          mood: 'Nailed it',
+          problem: '',
+          solution: '',
+          lesson: '',
+          projectId: '',
+          taskId: ''
+        });
+        setIsJournalModalOpen(false);
+        await Promise.all([fetchJournals(), fetchStats()]);
+      } else {
+        const errorData = await res.json().catch(() => ({}));
+        setFormError(errorData.message || `Server Error (${res.status}): Journal creation failed.`);
+      }
+    } catch (err) {
+      setFormError('Network error connecting to API.');
     }
-  } catch (err) {
-    setFormError('Network error connecting to API.');
-  }
-};
+  };
 
   // Project Handlers
   const handleCreateProject = async (e) => {
     if (e) e.preventDefault();
     setFormError('');
     if (!newProject.name.trim()) return;
-
     try {
-      const res = await fetch(`${API_BASE_URL}/api/projects`, {
+      const res = await fetch(`${API_URL}/api/projects`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newProject)
       });
-
       if (res.ok) {
         setNewProject({ name: '', description: '', status: 'ACTIVE' });
         setIsProjectModalOpen(false);
@@ -288,21 +269,18 @@ export default function App() {
     e.preventDefault();
     const rawId = e.dataTransfer.getData('text/plain') || e.dataTransfer.getData('taskId');
     if (!rawId || rawId === 'NaN') return;
-
     setTasks((prevTasks) =>
       prevTasks.map((t) => {
         const currentId = (t.id || t._id)?.toString();
         return currentId === rawId ? { ...t, status: targetStatus } : t;
       })
     );
-
     try {
-      const res = await fetch(`${API_BASE_URL}/api/tasks/${rawId}/status`, {
+      const res = await fetch(`${API_URL}/api/tasks/${rawId}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: targetStatus }),
       });
-
       if (!res.ok) {
         await fetchTasks();
       } else {
@@ -324,7 +302,6 @@ export default function App() {
             </div>
             <span className="font-bold text-lg tracking-wide text-white">dev_space</span>
           </div>
-
           <nav className="space-y-2">
             {[
               { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -350,7 +327,6 @@ export default function App() {
             })}
           </nav>
         </div>
-
         <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl">
           <p className="text-xs text-slate-400 font-medium">Developer Workspace</p>
           <p className="text-xs text-slate-500 mt-1">Logged in as Praise</p>
@@ -374,8 +350,6 @@ export default function App() {
               {activeTab === 'projects' && 'High-level project status and tracking.'}
             </p>
           </div>
-
-          {/* Unified Single Action Button per tab */}
           <div className="flex items-center gap-3">
             {activeTab === 'projects' ? (
               <button
@@ -415,7 +389,6 @@ export default function App() {
         </header>
 
         <main className="flex-1 p-8 overflow-y-auto bg-slate-950">
-          {/* Dashboard View */}
           {activeTab === 'dashboard' && (
             <div className="space-y-8">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -436,7 +409,6 @@ export default function App() {
                   <div className="text-2xl font-bold text-white mt-2">{stats.journalCount}</div>
                 </div>
               </div>
-
               <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
                 <h2 className="text-base font-semibold text-white mb-4">Current Sprint Focus</h2>
                 {tasks.length === 0 ? (
@@ -464,7 +436,6 @@ export default function App() {
             </div>
           )}
 
-          {/* Kanban Board View */}
           {activeTab === 'board' && (
             <div className="flex gap-6 overflow-x-auto pb-4">
               {['IDEAS', 'TODO', 'IN_PROGRESS', 'DONE'].map((columnKey) => (
@@ -482,7 +453,6 @@ export default function App() {
                       {tasks.filter((t) => t.status === columnKey).length}
                     </span>
                   </div>
-
                   <div className="space-y-3 flex-1">
                     {tasks
                       .filter((t) => t.status === columnKey)
@@ -490,7 +460,6 @@ export default function App() {
                         const linkedProject = projects.find(
                           (p) => (p.id || p._id)?.toString() === task.projectId?.toString()
                         );
-
                         return (
                           <div
                             key={task.id || task._id}
@@ -505,12 +474,9 @@ export default function App() {
                                 {task.priority}
                               </span>
                             </div>
-
                             {task.description && (
                               <p className="text-xs text-slate-400 line-clamp-2">{task.description}</p>
                             )}
-
-                            {/* Project Visual Badge */}
                             {linkedProject && (
                               <div className="pt-1 flex items-center gap-1 text-[10px] text-indigo-400 bg-indigo-950/60 border border-indigo-900 px-2 py-1 rounded-md w-fit font-medium">
                                 <Folder className="w-3 h-3 text-indigo-400 shrink-0" />
@@ -526,13 +492,11 @@ export default function App() {
             </div>
           )}
 
-          {/* Developer Journal View */}
           {activeTab === 'journal' && (
             <div className="space-y-4">
               <div className="flex justify-between items-center mb-2">
                 <h2 className="text-sm font-semibold text-slate-400">All Learning Entries ({journals.length})</h2>
               </div>
-
               {journals.length === 0 ? (
                 <div className="text-center py-16 bg-slate-900 border border-slate-800 rounded-2xl text-slate-500">
                   <FileText className="w-8 h-8 mx-auto mb-2 opacity-50" />
@@ -542,7 +506,6 @@ export default function App() {
                 journals.map((entry) => {
                   const linkedProj = projects.find((p) => (p.id || p._id)?.toString() === entry.projectId?.toString());
                   const linkedTask = tasks.find((t) => (t.id || t._id)?.toString() === entry.taskId?.toString());
-
                   return (
                     <div key={entry.id || entry._id} className="p-6 bg-slate-900 border border-slate-800 rounded-2xl space-y-4">
                       <div className="flex items-center justify-between flex-wrap gap-2">
@@ -569,9 +532,7 @@ export default function App() {
                         </div>
                         <span className="text-xs text-slate-500">{new Date(entry.createdAt).toLocaleDateString()}</span>
                       </div>
-
                       <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-line">{entry.content}</p>
-
                       {(entry.problem || entry.solution || entry.lesson) && (
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-3 border-t border-slate-800/80">
                           {entry.problem && (
@@ -594,7 +555,6 @@ export default function App() {
                           )}
                         </div>
                       )}
-
                       {entry.tags && (
                         <div className="flex items-center gap-2 pt-1">
                           <Tag className="w-3 h-3 text-slate-500" />
@@ -614,13 +574,11 @@ export default function App() {
             </div>
           )}
 
-          {/* Projects View */}
           {activeTab === 'projects' && (
             <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <h2 className="text-sm font-semibold text-slate-400">All Active Projects ({projects.length})</h2>
               </div>
-
               {projects.length === 0 ? (
                 <div className="text-center py-16 bg-slate-900 border border-slate-800 rounded-2xl text-slate-500">
                   <Folder className="w-8 h-8 mx-auto mb-2 opacity-50" />
@@ -634,7 +592,6 @@ export default function App() {
                       (t) => t.projectId && t.projectId.toString() === projId
                     );
                     const completedCount = linkedTasks.filter((t) => t.status === 'DONE').length;
-
                     return (
                       <div key={projId} className="p-6 bg-slate-900 border border-slate-800 rounded-2xl space-y-4 flex flex-col justify-between">
                         <div className="space-y-2">
@@ -648,7 +605,6 @@ export default function App() {
                             <p className="text-xs text-slate-400 line-clamp-2">{proj.description}</p>
                           )}
                         </div>
-
                         <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
                           <span>{linkedTasks.length} Tasks Linked</span>
                           <span className="text-emerald-400">{completedCount} Completed</span>
@@ -664,7 +620,6 @@ export default function App() {
       </div>
 
       {/* --- MODALS --- */}
-
       {/* Task Edit Modal */}
       {editingTask && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
@@ -675,7 +630,6 @@ export default function App() {
                 <X className="w-5 h-5" />
               </button>
             </div>
-
             <form onSubmit={handleUpdateTask} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-400 mb-1">Title</label>
@@ -687,7 +641,6 @@ export default function App() {
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500"
                 />
               </div>
-
               <div>
                 <label className="block text-xs font-semibold text-slate-400 mb-1">Description</label>
                 <textarea
@@ -697,7 +650,6 @@ export default function App() {
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500"
                 />
               </div>
-
               <div>
                 <label className="block text-xs font-semibold text-slate-400 mb-1">Project</label>
                 <select
@@ -713,7 +665,6 @@ export default function App() {
                   ))}
                 </select>
               </div>
-
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-400 mb-1">Priority</label>
@@ -727,7 +678,6 @@ export default function App() {
                     <option value="HIGH">High</option>
                   </select>
                 </div>
-
                 <div>
                   <label className="block text-xs font-semibold text-slate-400 mb-1">Status Column</label>
                   <select
@@ -742,7 +692,6 @@ export default function App() {
                   </select>
                 </div>
               </div>
-
               <div className="pt-4 flex items-center justify-between border-t border-slate-800">
                 <button
                   type="button"
@@ -775,11 +724,9 @@ export default function App() {
                 <X className="w-5 h-5" />
               </button>
             </div>
-
             {formError && (
               <div className="p-3 bg-red-950/60 border border-red-800 rounded-xl text-red-400 text-xs">{formError}</div>
             )}
-
             <form onSubmit={handleCreateTask} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-400 mb-1">Title</label>
@@ -792,7 +739,6 @@ export default function App() {
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500"
                 />
               </div>
-
               <div>
                 <label className="block text-xs font-semibold text-slate-400 mb-1">Description</label>
                 <textarea
@@ -803,7 +749,6 @@ export default function App() {
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500"
                 />
               </div>
-
               <div>
                 <label className="block text-xs font-semibold text-slate-400 mb-1">Assign to Project (Optional)</label>
                 <select
@@ -819,7 +764,6 @@ export default function App() {
                   ))}
                 </select>
               </div>
-
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-400 mb-1">Priority</label>
@@ -833,7 +777,6 @@ export default function App() {
                     <option value="HIGH">High</option>
                   </select>
                 </div>
-
                 <div>
                   <label className="block text-xs font-semibold text-slate-400 mb-1">Status Column</label>
                   <select
@@ -848,7 +791,6 @@ export default function App() {
                   </select>
                 </div>
               </div>
-
               <div className="pt-2 flex justify-end gap-3">
                 <button type="button" onClick={() => setIsTaskModalOpen(false)} className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-slate-200">
                   Cancel
@@ -872,11 +814,9 @@ export default function App() {
                 <X className="w-5 h-5" />
               </button>
             </div>
-
             {formError && (
               <div className="p-3 bg-red-950/60 border border-red-800 rounded-xl text-red-400 text-xs">{formError}</div>
             )}
-
             <form onSubmit={handleCreateProject} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-400 mb-1">Project Name</label>
@@ -889,7 +829,6 @@ export default function App() {
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500"
                 />
               </div>
-
               <div>
                 <label className="block text-xs font-semibold text-slate-400 mb-1">Description</label>
                 <textarea
@@ -900,7 +839,6 @@ export default function App() {
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500"
                 />
               </div>
-
               <div>
                 <label className="block text-xs font-semibold text-slate-400 mb-1">Status</label>
                 <select
@@ -913,7 +851,6 @@ export default function App() {
                   <option value="COMPLETED">Completed</option>
                 </select>
               </div>
-
               <div className="pt-2 flex justify-end gap-3">
                 <button type="button" onClick={() => setIsProjectModalOpen(false)} className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-slate-200">
                   Cancel
@@ -937,11 +874,9 @@ export default function App() {
                 <X className="w-5 h-5" />
               </button>
             </div>
-
             {formError && (
               <div className="p-3 bg-red-950/60 border border-red-800 rounded-xl text-red-400 text-xs">{formError}</div>
             )}
-
             <form onSubmit={handleCreateJournal} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-400 mb-1">Title / Overview</label>
@@ -954,7 +889,6 @@ export default function App() {
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-indigo-500"
                 />
               </div>
-
               <div>
                 <label className="block text-xs font-semibold text-slate-400 mb-1">Entry Summary & Details</label>
                 <textarea
@@ -966,7 +900,6 @@ export default function App() {
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-indigo-500"
                 />
               </div>
-
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-400 mb-1">Link to Project (Optional)</label>
@@ -983,7 +916,6 @@ export default function App() {
                     ))}
                   </select>
                 </div>
-
                 <div>
                   <label className="block text-xs font-semibold text-slate-400 mb-1">Link to Task (Optional)</label>
                   <select
@@ -1000,7 +932,6 @@ export default function App() {
                   </select>
                 </div>
               </div>
-
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-400 mb-1">Mood / Outcome</label>
@@ -1014,7 +945,6 @@ export default function App() {
                     <option value="Tough Bug">Tough Bug 🐛</option>
                   </select>
                 </div>
-
                 <div>
                   <label className="block text-xs font-semibold text-slate-400 mb-1">Tags (comma-separated)</label>
                   <input
@@ -1026,7 +956,6 @@ export default function App() {
                   />
                 </div>
               </div>
-
               <div className="space-y-3 pt-2">
                 <input
                   type="text"
@@ -1043,13 +972,12 @@ export default function App() {
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500"
                 />
               </div>
-
               <div className="pt-2 flex justify-end gap-3">
                 <button type="button" onClick={() => setIsJournalModalOpen(false)} className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-slate-200">
                   Cancel
                 </button>
                 <button type="submit" className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl transition cursor-pointer">
-                  Save Journal Entry
+                  Create Entry
                 </button>
               </div>
             </form>
