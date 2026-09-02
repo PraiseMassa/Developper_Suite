@@ -5,7 +5,7 @@ const { PrismaClient } = pkg;
 
 const express = require('express');
 const cors = require('cors');
-const app = express();
+//const app = express();
 const prisma = new PrismaClient();
 
 app.use(cors());
