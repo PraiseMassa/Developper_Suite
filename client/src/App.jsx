@@ -16,6 +16,13 @@ import {
   Trash2
 } from 'lucide-react';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
+// Example fetch request
+fetch(`${API_URL}/api/your-endpoint`)
+  .then(res => res.json())
+  .then(data => console.log(data));
+
 export default function App() {
   const [activeTab, setActiveTab] = useState('board');
   const [stats, setStats] = useState({ activeProjects: 0, tasksDue: 0, completedTasks: 0, journalCount: 0 });
