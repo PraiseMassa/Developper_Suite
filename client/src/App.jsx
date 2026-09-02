@@ -75,7 +75,7 @@ export default function App() {
 
   const fetchStats = async () => {
     try {
-      const res = await fetch('/api/dashboard/stats');
+      const res = await fetch('${API_BASE_URL}/api/dashboard/stats');
       if (!res.ok) return;
       const data = await res.json();
       if (data.stats) setStats(data.stats);
@@ -86,7 +86,7 @@ export default function App() {
 
   const fetchTasks = async () => {
     try {
-      const res = await fetch('/api/tasks');
+      const res = await fetch('${API_BASE_URL}/api/tasks');
       if (!res.ok) return setTasks([]);
       const data = await res.json();
       setTasks(Array.isArray(data) ? data : []);
@@ -98,7 +98,7 @@ export default function App() {
 
   const fetchJournals = async () => {
     try {
-      const res = await fetch('/api/journals');
+      const res = await fetch('${API_BASE_URL}/api/journals');
       if (!res.ok) return setJournals([]);
       const data = await res.json();
       setJournals(Array.isArray(data) ? data : []);
@@ -110,7 +110,7 @@ export default function App() {
 
   const fetchProjects = async () => {
     try {
-      const res = await fetch('/api/projects');
+      const res = await fetch('${API_BASE_URL}/api/projects');
       if (!res.ok) return setProjects([]);
       const data = await res.json();
       setProjects(Array.isArray(data) ? data : []);
@@ -130,7 +130,7 @@ export default function App() {
     if (!payload.projectId) delete payload.projectId;
 
     try {
-      const res = await fetch('/api/tasks', {
+      const res = await fetch('${API_BASE_URL}/api/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -156,7 +156,7 @@ export default function App() {
     const taskId = editingTask.id || editingTask._id;
 
     try {
-      const res = await fetch(`/api/tasks/${taskId}`, {
+      const res = await fetch(`${API_BASE_URL}/api/tasks/${taskId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editingTask)
@@ -175,7 +175,7 @@ export default function App() {
     if (!window.confirm('Are you sure you want to delete this task?')) return;
 
     try {
-      const res = await fetch(`/api/tasks/${taskId}`, { method: 'DELETE' });
+      const res = await fetch(`${API_BASE_URL}/api/tasks/${taskId}`, { method: 'DELETE' });
       if (res.ok) {
         setEditingTask(null);
         await Promise.all([fetchTasks(), fetchStats()]);
@@ -205,7 +205,7 @@ export default function App() {
   };
 
   try {
-    const res = await fetch('/api/journals', {
+    const res = await fetch(`${API_BASE_URL}/api/journals`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -241,7 +241,7 @@ export default function App() {
     if (!newProject.name.trim()) return;
 
     try {
-      const res = await fetch('/api/projects', {
+      const res = await fetch(`${API_BASE_URL}/api/projects`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newProject)
@@ -297,7 +297,7 @@ export default function App() {
     );
 
     try {
-      const res = await fetch(`/api/tasks/${rawId}/status`, {
+      const res = await fetch(`${API_BASE_URL}/api/tasks/${rawId}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: targetStatus }),
