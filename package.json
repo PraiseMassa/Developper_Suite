@@ -5,17 +5,10 @@
   "scripts": {
     "dev": "cd client && npm run dev",
     "build": "cd client && npm run build",
-    "start": "node api/server.js",
     "vercel-build": "npm run build",
-    "server": "nodemon api/server.js",
-    "lint": "eslint .",
-    "preview": "cd client && npm run preview",
-    "postinstall": "prisma generate"
+    "start": "node api/server.js",
+    "server": "nodemon api/server.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "Developer Workspace Suite with Kanban, Journal, and Project Management",
   "dependencies": {
     "@prisma/client": "^5.22.0",
     "cors": "^2.8.6",
