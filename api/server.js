@@ -1,33 +1,21 @@
 import express from 'express';
 import cors from 'cors';
-import pkg from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 
-const { PrismaClient } = pkg;
 const prisma = new PrismaClient();
 const app = express();
 
-// Allowed Origins Setup
-const allowedOrigins = [
-  'https://praisemassa-developpersuite.vercel.app',
-  'http://localhost:5173'
-];
-
+// CORS - Allow all origins since we're on same domain
 app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: true,
   credentials: true
 }));
-
 app.use(express.json());
 
 // ==========================================
 // 1. PROJECTS ENDPOINTS
 // ==========================================
+
 app.get('/api/projects', async (req, res) => {
   try {
     const projects = await prisma.project.findMany({
@@ -40,6 +28,7 @@ app.get('/api/projects', async (req, res) => {
     });
     res.json(projects);
   } catch (error) {
+    console.error('Failed to fetch projects:', error);
     res.status(500).json({ error: 'Failed to fetch projects' });
   }
 });
@@ -67,6 +56,7 @@ app.post('/api/projects', async (req, res) => {
 // ==========================================
 // 2. TASKS (KANBAN) ENDPOINTS
 // ==========================================
+
 app.get('/api/tasks', async (req, res) => {
   try {
     const tasks = await prisma.task.findMany({
@@ -78,6 +68,7 @@ app.get('/api/tasks', async (req, res) => {
     });
     res.json(tasks);
   } catch (error) {
+    console.error('Failed to fetch tasks:', error);
     res.status(500).json({ error: 'Failed to fetch tasks' });
   }
 });
@@ -112,12 +103,12 @@ app.patch('/api/tasks/:id', async (req, res) => {
     
     const updatedTask = await prisma.task.update({
       where: { id },
-      data: { 
-        status, 
-        title: title ? title.trim() : undefined, 
-        description: description !== undefined ? description?.trim() : undefined, 
-        priority, 
-        projectId: projectId ? String(projectId) : null 
+      data: {
+        status,
+        title: title ? title.trim() : undefined,
+        description: description !== undefined ? description?.trim() : undefined,
+        priority,
+        projectId: projectId ? String(projectId) : null
       }
     });
     res.json(updatedTask);
@@ -156,6 +147,7 @@ app.delete('/api/tasks/:id', async (req, res) => {
 // ==========================================
 // 3. JOURNAL ENTRIES ENDPOINTS
 // ==========================================
+
 app.get('/api/journals', async (req, res) => {
   try {
     const { publicOnly } = req.query;
@@ -170,6 +162,7 @@ app.get('/api/journals', async (req, res) => {
     });
     res.json(entries);
   } catch (error) {
+    console.error('Failed to fetch journal entries:', error);
     res.status(500).json({ error: 'Failed to fetch journal entries' });
   }
 });
@@ -203,6 +196,7 @@ app.post('/api/journals', async (req, res) => {
 // ==========================================
 // 4. DASHBOARD STATS ENDPOINT
 // ==========================================
+
 app.get('/api/dashboard/stats', async (req, res) => {
   try {
     const activeProjects = await prisma.project.count();
@@ -219,12 +213,18 @@ app.get('/api/dashboard/stats', async (req, res) => {
       recentTasks
     });
   } catch (error) {
+    console.error('Failed to fetch dashboard stats:', error);
     res.status(500).json({ error: 'Failed to fetch dashboard stats' });
   }
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`🚀 DevSpace Server running on http://localhost:${PORT}`);
+// ==========================================
+// Health Check Endpoint
+// ==========================================
+
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+// Export for Vercel
 export default app;

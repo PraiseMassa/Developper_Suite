@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  LayoutDashboard, 
-  Kanban, 
-  BookOpen, 
-  FolderKanban, 
-  Clock, 
+
+import {
+  LayoutDashboard,
+  Kanban,
+  BookOpen,
+  FolderKanban,
+  Clock,
   FileText,
   Sparkles,
   Plus,
@@ -15,8 +16,6 @@ import {
   CheckSquare,
   Trash2
 } from 'lucide-react';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('board');
@@ -70,7 +69,7 @@ export default function App() {
 
   const fetchStats = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/dashboard/stats`);
+      const res = await fetch('/api/dashboard/stats');
       if (!res.ok) return;
       const data = await res.json();
       if (data.stats) setStats(data.stats);
@@ -81,7 +80,7 @@ export default function App() {
 
   const fetchTasks = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/tasks`);
+      const res = await fetch('/api/tasks');
       if (!res.ok) return setTasks([]);
       const data = await res.json();
       setTasks(Array.isArray(data) ? data : []);
@@ -93,7 +92,7 @@ export default function App() {
 
   const fetchJournals = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/journals`);
+      const res = await fetch('/api/journals');
       if (!res.ok) return setJournals([]);
       const data = await res.json();
       setJournals(Array.isArray(data) ? data : []);
@@ -105,7 +104,7 @@ export default function App() {
 
   const fetchProjects = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/projects`);
+      const res = await fetch('/api/projects');
       if (!res.ok) return setProjects([]);
       const data = await res.json();
       setProjects(Array.isArray(data) ? data : []);
@@ -123,7 +122,7 @@ export default function App() {
     const payload = { ...newTask };
     if (!payload.projectId) delete payload.projectId;
     try {
-      const res = await fetch(`${API_URL}/api/tasks`, {
+      const res = await fetch('/api/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -133,6 +132,7 @@ export default function App() {
         setIsTaskModalOpen(false);
         await Promise.all([fetchTasks(), fetchStats()]);
       } else {
+        const errText = await res.text();
         setFormError(`Server Error (${res.status}): Task creation failed.`);
       }
     } catch (err) {
@@ -145,7 +145,7 @@ export default function App() {
     if (!editingTask || !editingTask.title.trim()) return;
     const taskId = editingTask.id || editingTask._id;
     try {
-      const res = await fetch(`${API_URL}/api/tasks/${taskId}`, {
+      const res = await fetch(`/api/tasks/${taskId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editingTask)
@@ -162,7 +162,7 @@ export default function App() {
   const handleDeleteTask = async (taskId) => {
     if (!window.confirm('Are you sure you want to delete this task?')) return;
     try {
-      const res = await fetch(`${API_URL}/api/tasks/${taskId}`, { method: 'DELETE' });
+      const res = await fetch(`/api/tasks/${taskId}`, { method: 'DELETE' });
       if (res.ok) {
         setEditingTask(null);
         await Promise.all([fetchTasks(), fetchStats()]);
@@ -189,7 +189,7 @@ export default function App() {
       taskId: newJournal.taskId ? newJournal.taskId : null,
     };
     try {
-      const res = await fetch(`${API_URL}/api/journals`, {
+      const res = await fetch('/api/journals', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -223,7 +223,7 @@ export default function App() {
     setFormError('');
     if (!newProject.name.trim()) return;
     try {
-      const res = await fetch(`${API_URL}/api/projects`, {
+      const res = await fetch('/api/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newProject)
@@ -269,14 +269,16 @@ export default function App() {
     e.preventDefault();
     const rawId = e.dataTransfer.getData('text/plain') || e.dataTransfer.getData('taskId');
     if (!rawId || rawId === 'NaN') return;
+
     setTasks((prevTasks) =>
       prevTasks.map((t) => {
         const currentId = (t.id || t._id)?.toString();
         return currentId === rawId ? { ...t, status: targetStatus } : t;
       })
     );
+
     try {
-      const res = await fetch(`${API_URL}/api/tasks/${rawId}/status`, {
+      const res = await fetch(`/api/tasks/${rawId}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: targetStatus }),
@@ -350,6 +352,7 @@ export default function App() {
               {activeTab === 'projects' && 'High-level project status and tracking.'}
             </p>
           </div>
+          {/* Unified Single Action Button per tab */}
           <div className="flex items-center gap-3">
             {activeTab === 'projects' ? (
               <button
@@ -389,6 +392,7 @@ export default function App() {
         </header>
 
         <main className="flex-1 p-8 overflow-y-auto bg-slate-950">
+          {/* Dashboard View */}
           {activeTab === 'dashboard' && (
             <div className="space-y-8">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -416,8 +420,8 @@ export default function App() {
                 ) : (
                   <div className="space-y-3">
                     {tasks.slice(0, 5).map((task) => (
-                      <div 
-                        key={task.id || task._id} 
+                      <div
+                        key={task.id || task._id}
                         onClick={() => setEditingTask(task)}
                         className="flex items-center justify-between p-3 bg-slate-800 rounded-xl border border-slate-700 cursor-pointer hover:border-indigo-500 transition"
                       >
@@ -436,6 +440,7 @@ export default function App() {
             </div>
           )}
 
+          {/* Kanban Board View */}
           {activeTab === 'board' && (
             <div className="flex gap-6 overflow-x-auto pb-4">
               {['IDEAS', 'TODO', 'IN_PROGRESS', 'DONE'].map((columnKey) => (
@@ -477,6 +482,7 @@ export default function App() {
                             {task.description && (
                               <p className="text-xs text-slate-400 line-clamp-2">{task.description}</p>
                             )}
+                            {/* Project Visual Badge */}
                             {linkedProject && (
                               <div className="pt-1 flex items-center gap-1 text-[10px] text-indigo-400 bg-indigo-950/60 border border-indigo-900 px-2 py-1 rounded-md w-fit font-medium">
                                 <Folder className="w-3 h-3 text-indigo-400 shrink-0" />
@@ -492,6 +498,7 @@ export default function App() {
             </div>
           )}
 
+          {/* Developer Journal View */}
           {activeTab === 'journal' && (
             <div className="space-y-4">
               <div className="flex justify-between items-center mb-2">
@@ -574,6 +581,7 @@ export default function App() {
             </div>
           )}
 
+          {/* Projects View */}
           {activeTab === 'projects' && (
             <div className="space-y-6">
               <div className="flex justify-between items-center">
@@ -620,6 +628,7 @@ export default function App() {
       </div>
 
       {/* --- MODALS --- */}
+
       {/* Task Edit Modal */}
       {editingTask && (
         <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
@@ -635,8 +644,7 @@ export default function App() {
                 <label className="block text-xs font-semibold text-slate-400 mb-1">Title</label>
                 <input
                   type="text"
-                  required
-                  value={editingTask.title}
+                  required                  value={editingTask.title}
                   onChange={(e) => setEditingTask({ ...editingTask, title: e.target.value })}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500"
                 />
@@ -977,7 +985,7 @@ export default function App() {
                   Cancel
                 </button>
                 <button type="submit" className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl transition cursor-pointer">
-                  Create Entry
+                  Save Journal Entry
                 </button>
               </div>
             </form>
