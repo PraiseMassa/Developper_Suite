@@ -1,0 +1,14 @@
+node_modules
+.git
+README.md
+.gitignore
+.DS_Store
+_.log
+.env
+.env.local
+.env._.local
+server.js
+package.json
+prisma/
+_.sqlite
+_.db
